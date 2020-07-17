@@ -6,11 +6,10 @@ import boto3
 import os
 import sys
 
+# Fetching environment variables from .env file
 load_dotenv()
 
-
-print('Starting.....')
-print ()
+# AWS Services Session
 bs = boto3.client('elasticbeanstalk')
 ec2 = boto3.resource('ec2')
 
@@ -28,13 +27,11 @@ environment_name = os.getenv("ENVIRONMENT_NAME")
 destination_folder = os.getenv("DESTINATION_FOLDER")
 
 def get_instanceIDs(environment):
-    print('Getting the instance ids of ', environment)
     response = bs.describe_environment_resources(EnvironmentName=environment)
     temp = response['EnvironmentResources']['Instances']
     return [inst['Id'] for inst in temp]
 
 def get_instanceIPs(ids):
-    print("Getting the ip addresses of the instances.....")
     instances = ec2.instances.filter(Filters=[{
         'Name': 'instance-id',
         'Values': ids
@@ -46,7 +43,7 @@ def progress(filename, size, sent):
     sys.stdout.write("%s's progress: %.2f%%   \r" % (filename, float(sent)/float(size)*100) )
 
 def get_zipFiles(ips, destination_folder):
-    print("Creating a zip of all the log files in tomcat8 folder......")
+
     for idx, ip in enumerate(ips):
 
         #Setting up ssh connection
@@ -62,3 +59,16 @@ def get_zipFiles(ips, destination_folder):
         scp = SCPClient(ssh.get_transport(), progress=progress)
         scp.get(remote_path='./tomcat8-{}.zip'.format(idx), local_path=destination_folder)
         scp.close
+
+        ssh.close
+
+print("Starting it......\n")
+
+print("Getting Instance IDs")
+instance_ids = get_instanceIDs(environment_name)
+
+print("Getting Instance Ips")
+instance_ips = get_instanceIPs(instance_ids)
+
+print("Getting zip files.........")
+get_zipFiles(instance_ips, destination_folder)
