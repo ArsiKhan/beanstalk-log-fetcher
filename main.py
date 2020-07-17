@@ -19,6 +19,8 @@ ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 # Variables
 KEYPAIR_PATH = os.getenv("KEYPAIR_PATH")
+PKEY_PASSPHRASE = os.getenv("PKEY_PASSPHRASE")
+ENVIRONMENT_NAME = os.getenv("ENVIRONMENT_NAME")
 
 def get_instanceids(environment):
     print('Getting the instance ids of ', environment)
@@ -37,9 +39,9 @@ def get_instanceips(ids):
 def zip_files(ips):
     print("Creating a zip of all the log files in tomcat8 folder......")
     for idx, ip in enumerate(ips):
-        ssh.connect(ip, username='ec2-user', key_filename=KEYPAIR_PATH)
+        ssh.connect(ip, username='ec2-user', key_filename=KEYPAIR_PATH, passphrase=PKEY_PASSPHRASE)
         command = 'zip -r tomcat8-{}.zip /var/log/tomcat'.format(idx)
-        (stdin, stdout, stderr) = ssh.exec_command(command)
+        stdout = ssh.exec_command(command)
         for line in stdout.readlines():
             print(line)    
         ssh.close        
