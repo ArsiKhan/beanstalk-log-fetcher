@@ -2,3 +2,4 @@ boto3==1.14.21
 botocore==1.17.21
 python-dotenv==0.14.0
 paramiko==2.7.1
+scp==0.13.2
