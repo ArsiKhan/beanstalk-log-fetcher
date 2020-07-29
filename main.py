@@ -36,7 +36,7 @@ def get_instanceIPs(ids):
         'Name': 'instance-id',
         'Values': ids
     }])
-    return [instance.public_ip_address for instance in instances]
+    return {instance.id: instance.public_ip_address for instance in instances}
 
 # Define progress callback that prints the current percentage completed for the file
 def progress(filename, size, sent):
@@ -44,20 +44,21 @@ def progress(filename, size, sent):
 
 def get_zipFiles(ips, destination_folder):
 
-    for idx, ip in enumerate(ips):
+    for ID, ip in ips.items():
 
         #Setting up ssh connection
         ssh.connect(ip, username='ec2-user', key_filename=keypair_path, passphrase=pkey_passphrase)
         
-        #Creating a zip of log files
-        command = 'zip -r tomcat8-{}.zip /var/log/tomcat'.format(idx)
+        #Creating a zip of log file
+        command = 'zip -r tomcat8-{}.zip /var/log/tomcat8'.format(ID)
+        print(command)
         (stdin, stdout, stderr)  = ssh.exec_command(command)
         for line in stdout.readlines():
             print(line)    
         
         #Copying the created zip files
         scp = SCPClient(ssh.get_transport(), progress=progress)
-        scp.get(remote_path='./tomcat8-{}.zip'.format(idx), local_path=destination_folder)
+        scp.get(remote_path='./tomcat8-{}.zip'.format(ID), local_path=destination_folder)
         scp.close
 
         ssh.close
@@ -66,9 +67,9 @@ print("Starting it......\n")
 
 print("Getting Instance IDs")
 instance_ids = get_instanceIDs(environment_name)
-
+print(instance_ids)
 print("Getting Instance Ips")
 instance_ips = get_instanceIPs(instance_ids)
-
+print(instance_ips)
 print("Getting zip files.........")
 get_zipFiles(instance_ips, destination_folder)
